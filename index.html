@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Acadêmico — Turma E7</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#eef0f5;color:#1a1a2e;padding:20px 22px;min-width:320px}
+
+/* HEADER */
+.hdr{background:linear-gradient(135deg,#0f172a 0%,#1e3a5f 55%,#1d4ed8 100%);
+  border-radius:14px;padding:22px 26px;color:white;margin-bottom:18px;
+  display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+.hdr-left h1{font-size:1.3rem;font-weight:800;letter-spacing:-.02em}
+.hdr-left p{font-size:.75rem;opacity:.65;margin-top:3px}
+.hdr-chip{background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.25);
+  border-radius:20px;padding:6px 14px;font-size:.73rem;font-weight:700;letter-spacing:.04em}
+
+/* STATS GRID */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:18px}
+.stat{background:white;border-radius:11px;padding:14px 14px 12px;text-align:center;
+  box-shadow:0 1px 4px rgba(0,0,0,.07);border-top:4px solid;cursor:pointer;transition:.15s}
+.stat:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.1)}
+.stat.s-total{border-color:#6366f1}
+.stat.s-ok{border-color:#16a34a}
+.stat.s-warn{border-color:#f59e0b}
+.stat.s-crit{border-color:#dc2626}
+.stat-num{font-size:2rem;font-weight:900;line-height:1.1}
+.stat.s-total .stat-num{color:#6366f1}
+.stat.s-ok .stat-num{color:#16a34a}
+.stat.s-warn .stat-num{color:#f59e0b}
+.stat.s-crit .stat-num{color:#dc2626}
+.stat-lbl{font-size:.68rem;color:#888;margin-top:2px;font-weight:600}
+
+/* BARRA VISUAL */
+.progress-wrap{background:white;border-radius:11px;padding:14px 18px;
+  box-shadow:0 1px 4px rgba(0,0,0,.07);margin-bottom:18px}
+.progress-title{font-size:.7rem;font-weight:700;color:#888;text-transform:uppercase;
+  letter-spacing:.07em;margin-bottom:10px}
+.prog-bar-bg{height:12px;background:#f1f5f9;border-radius:8px;overflow:hidden;display:flex}
+.prog-seg{height:100%;transition:width .4s;position:relative}
+.prog-seg.ok{background:#16a34a}
+.prog-seg.warn{background:#f59e0b}
+.prog-seg.crit{background:#dc2626}
+.prog-labels{display:flex;gap:16px;margin-top:7px;flex-wrap:wrap}
+.prog-lbl{font-size:.68rem;display:flex;align-items:center;gap:4px;color:#555}
+.prog-dot{width:9px;height:9px;border-radius:50%}
+
+/* CONTROLES */
+.controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
+.search-wrap{position:relative;flex:1;min-width:180px}
+.search-wrap input{width:100%;padding:8px 12px 8px 34px;
+  border:2px solid #e2e8f0;border-radius:20px;font-size:.8rem;outline:none;
+  transition:.2s;background:white;color:#1a1a2e}
+.search-wrap input:focus{border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,.1)}
+.search-ico{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:#aaa;font-size:.85rem}
+.fbtn{padding:6px 13px;border-radius:20px;border:2px solid transparent;
+  font-size:.72rem;font-weight:700;cursor:pointer;transition:.18s;
+  background:white;color:#666;white-space:nowrap}
+.fbtn:hover{transform:translateY(-1px);box-shadow:0 2px 8px rgba(0,0,0,.1)}
+.fbtn.active{color:white}
+.fbtn[data-f="all"].active{background:#0f172a;border-color:#0f172a}
+.fbtn[data-f="ok"].active{background:#16a34a;border-color:#16a34a}
+.fbtn[data-f="warn"].active{background:#f59e0b;border-color:#f59e0b}
+.fbtn[data-f="crit"].active{background:#dc2626;border-color:#dc2626}
+
+.count-row{font-size:.72rem;color:#94a3b8;margin-bottom:8px;padding-left:2px}
+.count-row b{color:#475569}
+
+/* TABELA */
+.tbl-wrap{background:white;border-radius:13px;overflow:hidden;
+  box-shadow:0 1px 6px rgba(0,0,0,.07);overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.79rem;min-width:700px}
+thead tr{background:#0f172a}
+thead th{color:rgba(255,255,255,.85);padding:10px 12px;font-size:.67rem;font-weight:700;
+  text-transform:uppercase;letter-spacing:.07em;white-space:nowrap;text-align:center}
+thead th:nth-child(1){width:38px}
+thead th:nth-child(2){text-align:left;min-width:200px}
+thead th:nth-child(3){min-width:90px}
+tbody tr{border-bottom:1px solid #f1f5f9;transition:background .12s}
+tbody tr:hover{background:#f8faff}
+tbody tr:last-child{border-bottom:none}
+tbody tr.hidden{display:none}
+td{padding:9px 12px;text-align:center;vertical-align:middle}
+td:nth-child(1){color:#cbd5e1;font-size:.68rem;font-weight:600}
+td:nth-child(2){text-align:left}
+td:nth-child(3){text-align:left}
+
+/* ROW COLORS */
+tbody tr[data-st="ok"]{border-left:3px solid #16a34a}
+tbody tr[data-st="warn"]{border-left:3px solid #f59e0b}
+tbody tr[data-st="crit"]{border-left:3px solid #dc2626}
+
+.nome{font-weight:600;color:#1e293b;font-size:.8rem;line-height:1.3}
+.mat{font-size:.67rem;color:#94a3b8;display:block;margin-top:1px;font-family:monospace}
+
+/* PERIODO */
+.per{display:inline-flex;align-items:center;justify-content:center;
+  width:32px;height:24px;border-radius:8px;font-size:.72rem;font-weight:800}
+.per-ok{background:#dcfce7;color:#15803d}
+.per-warn{background:#fef9c3;color:#92400e}
+.per-crit{background:#fee2e2;color:#991b1b}
+.per-ver{background:#e0e7ff;color:#4338ca;font-size:.6rem}
+
+/* ACG */
+.acg-cell{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:80px}
+.acg-bar-bg{width:56px;height:7px;background:#e2e8f0;border-radius:4px;overflow:hidden}
+.acg-bar{height:100%;border-radius:4px}
+.acg-txt{font-size:.67rem;font-weight:700;white-space:nowrap}
+.acg-rest{font-size:.6rem;color:#94a3b8}
+
+/* BADGE */
+.badge{display:inline-block;padding:3px 9px;border-radius:20px;
+  font-size:.66rem;font-weight:700;white-space:nowrap}
+.b-ok{background:#dcfce7;color:#15803d}
+.b-warn{background:#fef3c7;color:#92400e}
+.b-crit{background:#fee2e2;color:#991b1b}
+
+/* FOOTER */
+.footer{text-align:center;font-size:.68rem;color:#94a3b8;margin-top:14px}
+
+/* ── TELA DE LOGIN ── */
+#login-screen{
+  position:fixed;inset:0;z-index:9999;
+  background:linear-gradient(135deg,#0f172a 0%,#1e3a5f 55%,#1d4ed8 100%);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Segoe UI',system-ui,sans-serif;
+}
+.login-box{
+  background:white;border-radius:20px;padding:40px 36px;
+  width:100%;max-width:400px;box-shadow:0 24px 60px rgba(0,0,0,.3);
+  animation:loginIn .4s ease;
+}
+@keyframes loginIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+.login-logo{
+  width:52px;height:52px;background:linear-gradient(135deg,#6366f1,#1d4ed8);
+  border-radius:14px;display:flex;align-items:center;justify-content:center;
+  color:white;font-weight:900;font-size:1.1rem;margin:0 auto 20px;
+}
+.login-title{text-align:center;font-size:1.2rem;font-weight:800;color:#0f172a;margin-bottom:4px}
+.login-sub{text-align:center;font-size:.75rem;color:#64748b;margin-bottom:28px}
+.login-label{font-size:.72rem;font-weight:700;color:#475569;
+  text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:6px}
+.login-input{
+  width:100%;padding:11px 14px;border:2px solid #e2e8f0;border-radius:10px;
+  font-size:.88rem;font-family:inherit;color:#0f172a;outline:none;
+  transition:.2s;background:#f8fafc;margin-bottom:16px;
+}
+.login-input:focus{border-color:#6366f1;background:white;
+  box-shadow:0 0 0 3px rgba(99,102,241,.1)}
+
+/* Wrapper do campo senha com botão olhinho */
+.pass-wrap{position:relative}
+.pass-wrap .login-input{padding-right:44px}
+.pass-toggle{
+  position:absolute;right:10px;top:11px;
+  width:30px;height:30px;border:none;background:transparent;
+  cursor:pointer;font-size:1.05rem;line-height:1;padding:0;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:6px;transition:.15s;opacity:.55;
+}
+.pass-toggle:hover{opacity:1;background:#eef2ff}
+.pass-toggle:active{transform:scale(.92)}
+.login-btn{
+  width:100%;padding:12px;background:linear-gradient(135deg,#4f46e5,#1d4ed8);
+  color:white;border:none;border-radius:10px;font-size:.9rem;font-weight:700;
+  font-family:inherit;cursor:pointer;transition:.18s;margin-top:4px;
+}
+.login-btn:hover{filter:brightness(1.1);transform:translateY(-1px)}
+.login-btn:active{transform:none}
+.login-error{
+  background:#fef2f2;border:1.5px solid #fecaca;border-radius:8px;
+  padding:9px 13px;font-size:.75rem;color:#991b1b;font-weight:600;
+  margin-bottom:14px;display:none;text-align:center;
+}
+.login-error.show{display:block}
+.login-hint{
+  margin-top:20px;padding-top:16px;border-top:1px solid #f1f5f9;
+  font-size:.69rem;color:#94a3b8;text-align:center;line-height:1.6;
+}
+.login-hint strong{color:#64748b}
+/* Banner do aluno logado */
+#aluno-banner{
+  display:none;
+  background:linear-gradient(90deg,#1e3a5f,#1d4ed8);
+  color:white;padding:10px 22px;font-size:.78rem;
+  align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;
+  margin-bottom:18px;border-radius:11px;
+}
+#aluno-banner.show{display:flex}
+#aluno-banner strong{font-weight:700}
+.logout-btn{
+  padding:5px 13px;border-radius:20px;border:1.5px solid rgba(255,255,255,.35);
+  background:rgba(255,255,255,.1);color:white;font-size:.7rem;font-weight:700;
+  cursor:pointer;font-family:inherit;transition:.15s;
+}
+.logout-btn:hover{background:rgba(255,255,255,.2)}
+
+/* AVISO IA */
+.aviso-wrap{margin-top:22px;border-top:1px dashed #cbd5e1;padding-top:16px}
+.aviso-box{background:white;border-radius:12px;padding:18px 22px;
+  border-left:4px solid #6366f1;box-shadow:0 1px 4px rgba(0,0,0,.06);
+  display:flex;gap:14px;align-items:flex-start}
+.aviso-icon{font-size:1.4rem;flex-shrink:0;margin-top:2px}
+.aviso-content{}
+.aviso-title{font-size:.72rem;font-weight:800;color:#6366f1;
+  text-transform:uppercase;letter-spacing:.06em;margin-bottom:7px;
+  display:flex;align-items:center;gap:5px}
+.aviso-star{display:inline-flex;align-items:center;justify-content:center;
+  width:16px;height:16px;background:#6366f1;color:white;
+  border-radius:50%;font-size:.6rem;font-weight:900;flex-shrink:0}
+.aviso-text{font-size:.75rem;color:#475569;line-height:1.7}
+.aviso-text p{margin-bottom:8px}
+.aviso-text p:last-child{margin-bottom:0}
+.aviso-text strong{color:#1e293b}
+
+/* ── CONTROLES ADMIN (botões +/- e ACG editável) ── */
+.adm-cell{display:inline-flex;align-items:center;gap:4px;justify-content:center}
+.adm-btn{
+  width:20px;height:20px;border-radius:50%;border:none;cursor:pointer;
+  font-size:.8rem;font-weight:900;line-height:1;display:flex;
+  align-items:center;justify-content:center;transition:.15s;font-family:inherit;
+  background:#4f46e5;color:white;padding:0;
+}
+.adm-btn:hover{transform:scale(1.15);background:#3730a3}
+.adm-btn:active{transform:scale(.95)}
+.adm-btn.minus{background:#dc2626}
+.adm-btn.minus:hover{background:#991b1b}
+.adm-btn:disabled{background:#cbd5e1;cursor:not-allowed;transform:none}
+
+.acg-edit{
+  width:54px;padding:3px 6px;border:1.5px solid #4f46e5;border-radius:6px;
+  font-size:.72rem;font-weight:700;text-align:center;font-family:inherit;
+  color:#1e293b;background:#f0f4ff;outline:none;transition:.15s;
+}
+.acg-edit:focus{background:white;border-color:#1d4ed8;box-shadow:0 0 0 2px rgba(99,102,241,.2)}
+
+/* Quando admin está logado, destacar células editáveis */
+body.admin-mode tbody tr:hover td:nth-child(4),
+body.admin-mode tbody tr:hover td:nth-child(5),
+body.admin-mode tbody tr:hover td:nth-child(6),
+body.admin-mode tbody tr:hover td:nth-child(8){
+  background:rgba(99,102,241,.06);
+}
+</style>
+</head>
+<body>
+
+<!-- ── TELA DE LOGIN ── -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">E7</div>
+    <div class="login-title">Dashboard Acadêmico</div>
+    <div class="login-sub">PUC Minas Virtual · Sistemas de Informação EAD</div>
+
+    <div class="login-error" id="login-error">Usuário ou senha incorretos.</div>
+
+    <label class="login-label" for="l-user">Usuário / Matrícula</label>
+    <input class="login-input" id="l-user" type="text"
+           placeholder="Digite seu usuário ou matrícula" autocomplete="off">
+
+    <label class="login-label" for="l-pass">Senha</label>
+    <div class="pass-wrap">
+      <input class="login-input" id="l-pass" type="password"
+             placeholder="••••••••" autocomplete="off">
+      <button type="button" class="pass-toggle" id="pass-toggle"
+              onclick="togglePass()" title="Mostrar/ocultar senha"
+              aria-label="Mostrar ou ocultar senha">👁️</button>
+    </div>
+
+    <button class="login-btn" onclick="doLogin()">Entrar →</button>
+
+    <div class="login-hint">
+      <strong>Aluno:</strong> usuário = sua matrícula &nbsp;|&nbsp; senha = matrícula invertida<br>
+      <span style="color:#cbd5e1">Ex.: matrícula 823147 → senha 741328</span>
+    </div>
+  </div>
+</div>
+
+<!-- BANNER ALUNO LOGADO -->
+<div id="aluno-banner">
+  <span>👤 Logado como: <strong id="banner-nome">—</strong> &nbsp;·&nbsp; Matrícula: <strong id="banner-mat">—</strong></span>
+  <button class="logout-btn" onclick="doLogout()">Sair</button>
+</div>
+
+<!-- BANNER ADMIN LOGADO -->
+<div id="admin-banner" style="display:none;background:linear-gradient(90deg,#312e81,#4f46e5);
+  color:white;padding:10px 22px;font-size:.78rem;align-items:center;
+  justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:18px;border-radius:11px;">
+  <span>🛡️ Logado como: <strong>Administrador</strong> &nbsp;·&nbsp; Acesso total ao dashboard</span>
+  <button class="logout-btn" onclick="doLogout()">Sair</button>
+</div>
+
+<div class="hdr">
+  <div class="hdr-left">
+    <h1>📊 Dashboard Acadêmico — Turma E7</h1>
+    <p>PUC Minas Virtual · Sistemas de Informação EAD · Emissão: 20/05/2026</p>
+  </div>
+  <div class="hdr-chip">72 ALUNOS · TURMA E7</div>
+</div>
+
+<!-- STATS -->
+<div class="stats">
+  <div class="stat s-total" onclick="filterBy('all')">
+    <div class="stat-num">72</div>
+    <div class="stat-lbl">Total da turma</div>
+  </div>
+  <div class="stat s-ok" onclick="filterBy('ok')">
+    <div class="stat-num" id="cnt-ok">0</div>
+    <div class="stat-lbl">✅ Regulares</div>
+  </div>
+  <div class="stat s-warn" onclick="filterBy('warn')">
+    <div class="stat-num" id="cnt-warn">0</div>
+    <div class="stat-lbl">⚠️ Atenção</div>
+  </div>
+  <div class="stat s-crit" onclick="filterBy('crit')">
+    <div class="stat-num" id="cnt-crit">0</div>
+    <div class="stat-lbl">🔴 Críticos</div>
+  </div>
+</div>
+
+<!-- BARRA PROGRESSO TURMA -->
+<div class="progress-wrap">
+  <div class="progress-title">Distribuição da Turma</div>
+  <div class="prog-bar-bg" id="prog-bar">
+    <div class="prog-seg ok" id="seg-ok" style="width:0%"></div>
+    <div class="prog-seg warn" id="seg-warn" style="width:0%"></div>
+    <div class="prog-seg crit" id="seg-crit" style="width:0%"></div>
+  </div>
+  <div class="prog-labels">
+    <div class="prog-lbl"><div class="prog-dot" style="background:#16a34a"></div> <span id="lbl-ok">Regulares</span></div>
+    <div class="prog-lbl"><div class="prog-dot" style="background:#f59e0b"></div> <span id="lbl-warn">Atenção</span></div>
+    <div class="prog-lbl"><div class="prog-dot" style="background:#dc2626"></div> <span id="lbl-crit">Críticos</span></div>
+  </div>
+</div>
+
+<!-- CONTROLES -->
+<div class="controls">
+  <div class="search-wrap">
+    <span class="search-ico">🔍</span>
+    <input type="text" id="search" placeholder="Buscar por nome ou matrícula…">
+  </div>
+  <button class="fbtn active" data-f="all">Todos</button>
+  <button class="fbtn" data-f="ok">✅ Regulares</button>
+  <button class="fbtn" data-f="warn">⚠️ Atenção</button>
+  <button class="fbtn" data-f="crit">🔴 Críticos</button>
+</div>
+
+<div class="count-row">Exibindo <b id="vis-count">72</b> de 72 alunos</div>
+
+<!-- TABELA -->
+<div class="tbl-wrap">
+<table>
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Aluno</th>
+      <th>Matrícula</th>
+      <th>Projeto</th>
+      <th>Comp. Comp.</th>
+      <th>Desafios Cont.</th>
+      <th>ACGs Cumpridas</th>
+      <th>ACGs Restantes</th>
+      <th>Situação</th>
+    </tr>
+  </thead>
+  <tbody id="tbody"></tbody>
+</table>
+</div>
+
+<div class="footer">
+  Legenda — Períodos: <span style="background:#dcfce7;color:#15803d;padding:1px 7px;border-radius:6px;font-weight:700">7+</span> Regular ·
+  <span style="background:#fef9c3;color:#92400e;padding:1px 7px;border-radius:6px;font-weight:700">6</span> Em curso ·
+  <span style="background:#fee2e2;color:#991b1b;padding:1px 7px;border-radius:6px;font-weight:700">&lt;6</span> Pendência ·
+  ACGs restantes = horas que faltam para completar 40h obrigatórias
+</div>
+
+<div class="aviso-wrap">
+  <div class="aviso-box">
+    <div class="aviso-icon">🤖</div>
+    <div class="aviso-content">
+      <div class="aviso-title">
+        <span class="aviso-star">✱</span>
+        Nota sobre o uso de Inteligência Artificial
+      </div>
+      <div class="aviso-text">
+        <p>A análise deste histórico escolar contou com o apoio de <strong>Inteligência Artificial</strong> como ferramenta de suporte acadêmico, com o objetivo de otimizar tempo e auxiliar os processos internos da tutoria e da coordenação do curso.</p>
+        <p>Apesar do uso da tecnologia, o documento <strong>pode conter inconsistências ou interpretações equivocadas</strong>. Por esse motivo, recomenda-se que qualquer informação relevante seja validada individualmente por conferência humana.</p>
+        <p>A Inteligência Artificial atua como apoio operacional e ganho de produtividade, mas <strong>não substitui a análise crítica, a interpretação e a responsabilidade do fator humano</strong> — que, inclusive, também está sujeito a falhas. O uso combinado entre tecnologia e revisão humana é o que garante maior confiabilidade ao processo.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const A=[
+  {i:1,n:"André Fabiano de Andrade Lima",m:"806512",p:6,cc:6,dc:6,r:30},
+  {i:2,n:"Antônio Rubens Oliveira Junqueira",m:"807177",p:6,cc:6,dc:6,r:37},
+  {i:3,n:"Arthur Neves da Silveira",m:"801991",p:6,cc:7,dc:6,r:16},
+  {i:4,n:"Beatriz Fontainha de Castro",m:"814923",p:6,cc:6,dc:6,r:37},
+  {i:5,n:"Beatriz Pereira da Costa",m:"802000",p:6,cc:6,dc:6,r:7},
+  {i:6,n:"Bruno de Lacerda Tetzner",m:"812148",p:6,cc:5,dc:6,r:10},
+  {i:7,n:"Denis Alves da Silva Leite",m:"793454",p:6,cc:7,dc:7,r:0},
+  {i:8,n:"Felipe Paiva dos Santos",m:"821350",p:6,cc:6,dc:6,r:40},
+  {i:9,n:"Isabela Gomes Lima",m:"617203",p:5,cc:5,dc:4,r:40},
+  {i:10,n:"Italo Fideles Vieira do Nascimento",m:"809993",p:6,cc:6,dc:6,r:6.3},
+  {i:11,n:"Jully Anne Roman Palhano Dutra",m:"811602",p:6,cc:6,dc:6,r:0},
+  {i:12,n:"Lais Lara Ferreira dos Santos",m:"813826",p:6,cc:6,dc:6,r:40},
+  {i:13,n:"Lucas Henrique Oliveira Prado",m:"814507",p:6,cc:6,dc:6,r:9},
+  {i:14,n:"Lucas Morais Barcelos",m:"801190",p:6,cc:5,dc:6,r:40},
+  {i:15,n:"Lucas Peres Dias Costa",m:"794320",p:6,cc:6,dc:6,r:20},
+  {i:16,n:"Luigi Von Blucher Mezzogori",m:"825594",p:6,cc:6,dc:6,r:40},
+  {i:17,n:"Odair Cordeiro Marra",m:"887802",p:6,cc:6,dc:6,r:0},
+  {i:18,n:"Patrick Magalhães Robaina",m:"740621",p:6,cc:7,dc:6,r:10},
+  {i:19,n:"Pedro Henrique Nunes Alves",m:"813805",p:6,cc:6,dc:6,r:10},
+  {i:20,n:"Pedro Vinicius Ribeiro Teixeira Justino",m:"809397",p:6,cc:6,dc:6,r:40},
+  {i:21,n:"Ramir Aguiar Ribeiro Junior",m:"742368",p:6,cc:2,dc:2,r:20},
+  {i:22,n:"Ricardo de Andrade",m:"805446",p:6,cc:6,dc:6,r:40},
+  {i:23,n:"Samuel Lacerda Borges",m:"810114",p:6,cc:6,dc:6,r:40},
+  {i:24,n:"Sávio Sérgio Pereira da Silva",m:"807274",p:6,cc:6,dc:6,r:40},
+  {i:25,n:"Victor Alexandre Ferreira Santos",m:"814735",p:6,cc:6,dc:6,r:24},
+  {i:26,n:"Victor Henrique Pereira",m:"812252",p:6,cc:6,dc:6,r:3},
+  {i:27,n:"Victor Hugo Vasquez da Silva",m:"811519",p:6,cc:6,dc:6,r:20},
+  {i:28,n:"Vinícius Pereira Coelho",m:"810275",p:6,cc:6,dc:6,r:10},
+  {i:29,n:"Vitor Alberto Gonçalves Cavaco",m:"637610",p:6,cc:6,dc:6,r:19},
+  {i:30,n:"Andre Murilo Neves Vasconcelos",m:"642384",p:"VER",cc:1,dc:1,r:40},
+  {i:31,n:"André Ramos",m:"801111",p:6,cc:6,dc:6,r:15},
+  {i:32,n:"Carlos Eduardo de Lima Assis",m:"823452",p:6,cc:4,dc:2,r:40},
+  {i:33,n:"Daniela Sofia Fernandes de Assis",m:"742427",p:6,cc:6,dc:6,r:40},
+  {i:34,n:"Déborah Thaís de Matos",m:"836632",p:6,cc:6,dc:5,r:23},
+  {i:35,n:"Gabriel Amorim Santos Maia",m:"813139",p:6,cc:5,dc:6,r:40},
+  {i:36,n:"Gabriel Pangracio Azevedo",m:"820033",p:6,cc:6,dc:6,r:20},
+  {i:37,n:"Gabriela Moreira Bastos",m:"822325",p:6,cc:6,dc:6,r:25},
+  {i:38,n:"Gilberto Modesto",m:"810751",p:6,cc:6,dc:6,r:39},
+  {i:39,n:"Giulia Fernandes Donato de Mattos",m:"819308",p:6,cc:6,dc:6,r:38},
+  {i:40,n:"Guilherme Lanza Japolino",m:"729655",p:6,cc:7,dc:6,r:35},
+  {i:41,n:"Gustavo Gino Pereira",m:"822008",p:6,cc:5,dc:6,r:35},
+  {i:42,n:"Isabella Carolina de Almeida Siqueira Damião",m:"867178",p:2,cc:1,dc:1,r:7},
+  {i:43,n:"Isadora Aparecida Cardoso Carvalho",m:"824539",p:6,cc:6,dc:6,r:3},
+  {i:44,n:"Isadora Gomes Murta",m:"822275",p:6,cc:5,dc:6,r:40},
+  {i:45,n:"Jaime Bispo dos Santos",m:"782158",p:6,cc:7,dc:6,r:40},
+  {i:46,n:"João Gabriel Galdino de Oliveira",m:"808444",p:6,cc:5,dc:6,r:40},
+  {i:47,n:"Júnio dos Reis Firmino",m:"814918",p:6,cc:6,dc:6,r:40},
+  {i:48,n:"Lucas Brandão Guedes",m:"809690",p:6,cc:6,dc:6,r:38},
+  {i:49,n:"Maria Eduarda Sousa",m:"813040",p:6,cc:6,dc:6,r:40},
+  {i:50,n:"Nata Gabriel Teixeira",m:"825068",p:6,cc:6,dc:6,r:18},
+  {i:51,n:"Rafael Fernandes Marques",m:"813203",p:6,cc:6,dc:6,r:37.3},
+  {i:52,n:"Rayane Paiva Reginaldo",m:"635383",p:6,cc:5,dc:5,r:0},
+  {i:53,n:"Rhafael Hector de Siqueira Damião",m:"801053",p:6,cc:6,dc:6,r:40},
+  {i:54,n:"Rômulo Ferraz Chaves",m:"806484",p:6,cc:6,dc:6,r:26},
+  {i:55,n:"Samuel Marques Pereira",m:"788623",p:6,cc:6,dc:6,r:40},
+  {i:56,n:"Tales Hein",m:"790462",p:6,cc:5,dc:5,r:40},
+  {i:57,n:"Thais Camila Goncalves Costa",m:"825320",p:6,cc:5,dc:7,r:40},
+  {i:58,n:"Thiago Ferreira de Oliveira",m:"803949",p:6,cc:6,dc:6,r:10},
+  {i:59,n:"Vitor Antonio Malafaya da Cruz",m:"676476",p:6,cc:6,dc:6,r:30},
+  {i:60,n:"Warley Junio Martins Vieira",m:"813266",p:6,cc:6,dc:6,r:40},
+  {i:61,n:"Augusto Gabriel Lomba Pires",m:"815416",p:6,cc:5,dc:7,r:20},
+  {i:62,n:"Helberth Alencar Diniz Martins",m:"812345",p:6,cc:6,dc:6,r:18.3},
+  {i:63,n:"Ian Benevides de Abreu",m:"806066",p:6,cc:6,dc:6,r:40},
+  {i:64,n:"Leonardo Almeida Braga",m:"651222",p:6,cc:3,dc:4,r:40},
+  {i:65,n:"Lucas de Souza Nassif Lemos",m:"815881",p:6,cc:6,dc:6,r:10},
+  {i:66,n:"Luiz Henrique Santos de Andrade",m:"811656",p:6,cc:6,dc:6,r:40},
+  {i:67,n:"Matheus Carlos Fraga dos Santos",m:"800262",p:6,cc:6,dc:6,r:40},
+  {i:68,n:"Nathan de Mesquita dos Santos",m:"803741",p:6,cc:6,dc:6,r:30},
+  {i:69,n:"Rafael Moreira Arantes de Castro",m:"799003",p:6,cc:6,dc:6,r:40},
+  {i:70,n:"Sophia Thais Gibim Coelho",m:"686907",p:6,cc:6,dc:6,r:20},
+  {i:71,n:"Vitoria Lorrayne dos Santos Soares",m:"801550",p:6,cc:6,dc:6,r:15},
+  {i:72,n:"Wellington dos Santos Oliveira",m:"793195",p:5,cc:7,dc:7,r:40},
+];
+
+function getSt(p,cc,dc,r){
+  const pn = p==="VER"?0:+p, cn=+cc, dn=+dc, rest=+r;
+  const currOk = pn>=6 && cn>=6 && dn>=6;
+  if(!currOk) return "crit";
+  if(rest===0) return "ok";
+  if(rest<=20) return "warn";
+  return "crit";
+}
+
+function perCls(v){
+  if(v==="VER") return "per-ver";
+  const n=+v;
+  if(n>=7) return "per-ok";
+  if(n>=6) return "per-warn";
+  return "per-crit";
+}
+
+function acgHtml(r){
+  const rest=+r, feito=Math.max(0,40-rest), pct=Math.round((feito/40)*100);
+  const col= rest===0?"#16a34a": rest<=10?"#22c55e": rest<=20?"#f59e0b":"#dc2626";
+  const tcol= rest===0?"#15803d": rest<=10?"#15803d": rest<=20?"#92400e":"#991b1b";
+  return `<div class="acg-cell">
+    <div class="acg-bar-bg"><div class="acg-bar" style="width:${pct}%;background:${col}"></div></div>
+    <div class="acg-txt" style="color:${tcol}">${feito}h / 40h</div>
+  </div>`;
+}
+
+function acgRestHtml(r){
+  const rest=+r;
+  if(rest===0) return `<span style="color:#16a34a;font-weight:700;font-size:.75rem">✅ Completo</span>`;
+  const col = rest<=10?"#f59e0b": rest<=20?"#d97706":"#dc2626";
+  return `<span style="color:${col};font-weight:700;font-size:.75rem">${rest}h</span>`;
+}
+
+function badge(st){
+  const map={ok:"b-ok ✅ Regular",warn:"b-warn ⚠️ Atenção",crit:"b-crit 🔴 Crítico"};
+  const p=map[st].split(" "), cls=p[0], txt=p.slice(1).join(" ");
+  return `<span class="badge ${cls}">${txt}</span>`;
+}
+
+// Modo admin (controla se botões +/- e edição de ACG aparecem)
+let ADMIN_MODE = false;
+
+// Célula numérica (Projeto / Comp.Comp. / Desafios Cont.)
+// No modo admin, mostra [−] valor [+]; senão só o valor.
+function numCell(val, idx, campo){
+  const badge = `<span class="per ${perCls(val)}">${val}</span>`;
+  if(!ADMIN_MODE) return badge;
+  // "VER" não é numérico — botões desabilitados nesse caso
+  const isVer = val === "VER";
+  const minusDis = isVer || (+val) <= 1  ? "disabled" : "";
+  const plusDis  = isVer || (+val) >= 10 ? "disabled" : "";
+  return `<div class="adm-cell">
+    <button class="adm-btn minus" ${minusDis} onclick="changeNum(${idx},'${campo}',-1)" title="Diminuir">−</button>
+    ${badge}
+    <button class="adm-btn" ${plusDis} onclick="changeNum(${idx},'${campo}',1)" title="Aumentar">+</button>
+  </div>`;
+}
+
+// Célula ACG restantes: input editável se admin, span se aluno
+function acgRestCell(val, idx){
+  if(!ADMIN_MODE) return acgRestHtml(val);
+  return `<input type="number" class="acg-edit" min="0" max="40" step="0.1"
+    value="${val}" onchange="changeAcg(${idx}, this.value)"
+    onclick="this.select()" title="Editar horas restantes">`;
+}
+
+// Renderiza/atualiza UMA linha (usada na construção inicial e em updates)
+function renderRow(a){
+  const st = getSt(a.p, a.cc, a.dc, a.r);
+  let tr = document.querySelector(`tr[data-idx="${a.i}"]`);
+  const isNew = !tr;
+  if(isNew){
+    tr = document.createElement("tr");
+    tr.dataset.idx = a.i;
+  }
+  tr.dataset.st = st;
+  tr.dataset.q  = (a.n+" "+a.m).toLowerCase();
+  tr.innerHTML = `
+    <td>${a.i}</td>
+    <td><span class="nome">${a.n}</span><span class="mat">${a.m}</span></td>
+    <td><span class="mat" style="font-size:.78rem;color:#475569;font-weight:700">${a.m}</span></td>
+    <td>${numCell(a.p,  a.i, "p")}</td>
+    <td>${numCell(a.cc, a.i, "cc")}</td>
+    <td>${numCell(a.dc, a.i, "dc")}</td>
+    <td>${acgHtml(a.r)}</td>
+    <td>${acgRestCell(a.r, a.i)}</td>
+    <td>${badge(st)}</td>
+  `;
+  if(isNew) document.getElementById("tbody").appendChild(tr);
+}
+
+// Construir tabela inicial
+const tbody = document.getElementById("tbody");
+A.forEach(renderRow);
+
+// ── Handlers de edição (só funcionam no modo admin) ──
+function changeNum(idx, campo, delta){
+  const a = A.find(x => x.i === idx);
+  if(!a || a[campo] === "VER") return;
+  const novo = (+a[campo]) + delta;
+  if(novo < 1 || novo > 10) return;
+  a[campo] = novo;
+  renderRow(a);
+  applyAll();
+}
+
+function changeAcg(idx, valor){
+  const a = A.find(x => x.i === idx);
+  if(!a) return;
+  let v = parseFloat(valor);
+  if(isNaN(v) || v < 0) v = 0;
+  if(v > 40) v = 40;
+  a.r = v;
+  renderRow(a);
+  applyAll();
+}
+
+// Contadores e barra
+function updateAll(){
+  const rows=tbody.querySelectorAll("tr:not(.hidden)");
+  let ok=0,warn=0,crit=0;
+  rows.forEach(r=>{
+    const s=r.dataset.st;
+    if(s==="ok")ok++; else if(s==="warn")warn++; else crit++;
+  });
+  const tot=ok+warn+crit;
+  document.getElementById("cnt-ok").textContent=ok;
+  document.getElementById("cnt-warn").textContent=warn;
+  document.getElementById("cnt-crit").textContent=crit;
+  document.getElementById("vis-count").textContent=tot;
+  document.getElementById("seg-ok").style.width=(ok/72*100)+"%";
+  document.getElementById("seg-warn").style.width=(warn/72*100)+"%";
+  document.getElementById("seg-crit").style.width=(crit/72*100)+"%";
+  document.getElementById("lbl-ok").textContent=`Regulares: ${ok} (${Math.round(ok/72*100)}%)`;
+  document.getElementById("lbl-warn").textContent=`Atenção: ${warn} (${Math.round(warn/72*100)}%)`;
+  document.getElementById("lbl-crit").textContent=`Críticos: ${crit} (${Math.round(crit/72*100)}%)`;
+}
+updateAll();
+
+// Filtros
+let cur="all";
+function filterBy(f){
+  cur=f;
+  document.querySelectorAll(".fbtn").forEach(b=>{
+    b.classList.toggle("active",b.dataset.f===f);
+  });
+  applyAll();
+}
+document.querySelectorAll(".fbtn").forEach(b=>{
+  b.addEventListener("click",()=>filterBy(b.dataset.f));
+});
+
+const inp=document.getElementById("search");
+inp.addEventListener("input",applyAll);
+
+function applyAll(){
+  const q=inp.value.toLowerCase().trim();
+  tbody.querySelectorAll("tr").forEach(r=>{
+    const mf= cur==="all"||r.dataset.st===cur;
+    const mq= !q||r.dataset.q.includes(q);
+    r.classList.toggle("hidden",!(mf&&mq));
+  });
+  updateAll();
+}
+
+// Cards clicáveis
+document.querySelectorAll(".stat").forEach(card=>{
+  const onclick=card.getAttribute("onclick");
+  if(onclick) card.style.cursor="pointer";
+});
+
+/* ════════════════════════════════════════
+   SISTEMA DE LOGIN
+   - Admin : usuário "admin" / senha "admin"
+   - Aluno : usuário = matrícula / senha = matrícula invertida
+════════════════════════════════════════ */
+const MATRICULAS = A.map(a => String(a.m));
+
+function doLogin(){
+  const user = document.getElementById("l-user").value.trim();
+  const pass = document.getElementById("l-pass").value.trim();
+  const err  = document.getElementById("login-error");
+  err.classList.remove("show");
+
+  // ── Admin ──
+  if(user === "admin" && pass === "admin"){
+    entrar("admin", null);
+    return;
+  }
+
+  // ── Aluno ──
+  if(MATRICULAS.includes(user)){
+    const senhaCorreta = user.split("").reverse().join("");
+    if(pass === senhaCorreta){
+      const aluno = A.find(a => String(a.m) === user);
+      entrar("aluno", aluno);
+      return;
+    }
+  }
+
+  // Falha
+  err.textContent = "Usuário ou senha incorretos. Tente novamente.";
+  err.classList.add("show");
+  document.getElementById("l-pass").value = "";
+  document.getElementById("l-pass").focus();
+}
+
+function entrar(tipo, aluno){
+  document.getElementById("login-screen").style.display = "none";
+
+  if(tipo === "admin"){
+    document.getElementById("admin-banner").style.display = "flex";
+    // Ativar modo admin: re-renderiza todas as linhas com botões +/- e ACG editável
+    ADMIN_MODE = true;
+    document.body.classList.add("admin-mode");
+    A.forEach(renderRow);
+    applyAll();
+  }
+
+  if(tipo === "aluno" && aluno){
+    const banner = document.getElementById("aluno-banner");
+    document.getElementById("banner-nome").textContent = aluno.n;
+    document.getElementById("banner-mat").textContent  = aluno.m;
+    banner.classList.add("show");
+
+    document.getElementById("search").value = String(aluno.m);
+    applyAll();
+
+    document.getElementById("search").disabled = true;
+    document.querySelectorAll(".fbtn").forEach(b => b.disabled = true);
+  }
+}
+
+function doLogout(){
+  document.getElementById("login-screen").style.display = "flex";
+  document.getElementById("l-user").value = "";
+  document.getElementById("l-pass").value = "";
+  // Reset olhinho para estado oculto
+  document.getElementById("l-pass").type = "password";
+  const btn = document.getElementById("pass-toggle");
+  if(btn){ btn.textContent = "👁️"; btn.title = "Mostrar senha"; }
+  document.getElementById("login-error").classList.remove("show");
+  document.getElementById("aluno-banner").classList.remove("show");
+  document.getElementById("admin-banner").style.display = "none";
+  document.getElementById("search").value = "";
+  document.getElementById("search").disabled = false;
+  document.querySelectorAll(".fbtn").forEach(b => b.disabled = false);
+  // Desativar modo admin e voltar visual padrão
+  if(ADMIN_MODE){
+    ADMIN_MODE = false;
+    document.body.classList.remove("admin-mode");
+    A.forEach(renderRow);
+  }
+  applyAll();
+}
+
+// Alterna visibilidade da senha (olhinho 👁️)
+function togglePass(){
+  const inp = document.getElementById("l-pass");
+  const btn = document.getElementById("pass-toggle");
+  if(inp.type === "password"){
+    inp.type = "text";
+    btn.textContent = "🙈";
+    btn.title = "Ocultar senha";
+  } else {
+    inp.type = "password";
+    btn.textContent = "👁️";
+    btn.title = "Mostrar senha";
+  }
+  inp.focus();
+}
+
+// Permite login com Enter
+document.getElementById("l-pass").addEventListener("keydown", e => {
+  if(e.key === "Enter") doLogin();
+});
+document.getElementById("l-user").addEventListener("keydown", e => {
+  if(e.key === "Enter") document.getElementById("l-pass").focus();
+});
+</script>
+</body>
+</html>
